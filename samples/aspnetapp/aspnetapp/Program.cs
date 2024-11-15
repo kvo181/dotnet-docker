@@ -1,4 +1,8 @@
+using System.Net;
+using System.Net.Sockets;
+using System.Reflection.PortableExecutable;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,6 +43,26 @@ app.Lifetime.ApplicationStopping.Register( () =>
     cancellation.Cancel();
 });
 
+app.MapGet("/test", (context) =>
+{
+    var remoteIp = context.Connection.RemoteIpAddress;
+    var iPAddress = GetRemoteHostIpAddressUsingXForwardedFor(context);
+    var headers = context.Request.Headers;
+    var response = "<html><body><h1>Request Headers</h1><ul>";
+    foreach (var header in headers)
+    {
+        response += $"<li><strong>{header.Key}:</strong> {header.Value}</li>";
+    }
+    response += "</ul>";
+    response += "<h1>Remote IP</h1><ul>";
+    response += $"<li>{remoteIp}</li>";
+    response += "</ul>";
+    response += "<h1>x-Forwarder-For</h1><ul>";
+    response += $"<li>{iPAddress}</li>";
+    response += "</ul></body></html>";
+    return context.Response.WriteAsync(response);
+});
+
 app.MapGet("/Environment", () =>
 {
     return new EnvironmentInfo();
@@ -61,6 +85,28 @@ app.MapGet("/Delay/{value}", async (int value) =>
 });
 
 app.Run();
+
+static IPAddress? GetRemoteHostIpAddressUsingXForwardedFor(HttpContext httpContext)
+{
+    IPAddress? remoteIpAddress = null;
+    var forwardedFor = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+    if (!string.IsNullOrEmpty(forwardedFor))
+    {
+        var ips = forwardedFor.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                              .Select(s => s.Trim());
+        foreach (var ip in ips)
+        {
+            if (IPAddress.TryParse(ip, out var address) &&
+                (address.AddressFamily is AddressFamily.InterNetwork
+                 or AddressFamily.InterNetworkV6))
+            {
+                remoteIpAddress = address;
+                break;
+            }
+        }
+    }
+    return remoteIpAddress;
+}
 
 [JsonSerializable(typeof(EnvironmentInfo))]
 [JsonSerializable(typeof(Operation))]

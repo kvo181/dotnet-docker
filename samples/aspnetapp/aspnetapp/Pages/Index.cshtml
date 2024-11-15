@@ -7,6 +7,7 @@
     ViewData["Title"] = "Welcome to .NET";
     string hostName = System.Net.Dns.GetHostName();
     var ipList = await System.Net.Dns.GetHostAddressesAsync(hostName);
+    System.Net.IPHostEntry entry = await System.Net.Dns.GetHostEntryAsync(hostName);
     EnvironmentInfo env = new();
     const double Mebi = 1024 * 1024;
     const double Gibi = Mebi * 1024;
@@ -60,6 +61,32 @@
         <tr>
             <td>Host name</td>
             <td>@hostName</td>
+        </tr>
+        <tr>
+            <td style="vertical-align: top">Host Entry HostName</td>
+            <td>@entry.HostName</td>
+            <td style="vertical-align: top">Host Entry Aliases</td>
+            <td>
+                @{
+                    foreach (var alias in entry.Aliases)
+                    {
+                        @alias
+                        <br />
+                    }
+                }
+
+            </td>
+            <td style="vertical-align: top">Host Entry AddressList</td>
+            <td>
+                @{
+                    foreach (var ipAddress in entry.AddressList)
+                    {
+                        @ipAddress.ToString()
+                        <br />
+                    }
+                }
+
+            </td>
         </tr>
         <tr>
             <td style="vertical-align: top">Server IP address</td>
