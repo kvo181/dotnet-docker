@@ -57,9 +57,12 @@ app.MapGet("/test", (context) =>
     response += "<h1>Remote IP</h1><ul>";
     response += $"<li>{remoteIp}</li>";
     response += "</ul>";
-    response += "<h1>x-Forwarder-For</h1><ul>";
-    response += $"<li>{iPAddress}</li>";
+    response += "<h1>X-Forwarded-For</h1><ul>";
+    response += $"<li>X-Forwarded-For: {iPAddress}</li>";
     response += "</ul></body></html>";
+
+    Console.WriteLine($"X-Forwarded-For: {iPAddress}");
+
     return context.Response.WriteAsync(response);
 });
 
